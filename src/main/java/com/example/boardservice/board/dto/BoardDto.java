@@ -1,4 +1,4 @@
-package com.example.boardservice.board;
+package com.example.boardservice.board.dto;
 
 public class BoardDto {
 
