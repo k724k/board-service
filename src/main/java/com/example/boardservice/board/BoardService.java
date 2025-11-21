@@ -8,6 +8,9 @@ import com.example.boardservice.board.dto.UserResponseDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -59,4 +62,37 @@ public class BoardService {
 
             return boardResponseDto;
     }
+
+    public List<BoardResponseDto> getBoards(){
+        List<Board> boards = boardRepository.findAll();
+
+        // userId 목록 추출
+        List<Long> userIds = boards.stream()
+                .map(Board::getUserId)
+                .distinct()
+                .toList();
+
+        // user-serive로부터 사용자 정보 불러오기
+        List<UserResponseDto> userResponseDtos = userClient.fetchUserByIds(userIds);
+
+        // userId를 key로 하는 Map 생성
+        Map<Long, UserDto> userMap = new HashMap<>();
+        for(UserResponseDto userResponseDto : userResponseDtos){
+            Long userId = userResponseDto.getUserId();
+            String name = userResponseDto.getName();
+            userMap.put(userId,new UserDto(userId,name));
+        }
+
+        // 게시글 정보와 사용자 정보를 조합하여 BoardResponseDto 생성
+        return boards.stream()
+                .map(board -> new BoardResponseDto(
+                        board.getBoardId(),
+                        board.getTitle(),
+                        board.getContent(),
+                        userMap.get(board.getUserId()) // 맵에서 userDto 가져오기
+                ))
+                .toList();
+    }
+
+
 }

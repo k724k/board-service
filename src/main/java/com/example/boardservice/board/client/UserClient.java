@@ -2,10 +2,13 @@ package com.example.boardservice.board.client;
 
 import com.example.boardservice.board.dto.UserResponseDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -32,4 +35,23 @@ public class UserClient {
            return Optional.empty();
        }
     }
+
+    public List<UserResponseDto> fetchUserByIds(List<Long> ids){
+        try {
+            return this.restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/users")
+                            .queryParam("ids",ids)
+                            .build()
+                    )
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+        } catch (RestClientException e){
+            // log.error("사용자 정보 조회 실패: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+
+
 }

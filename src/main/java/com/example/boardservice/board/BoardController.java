@@ -5,6 +5,8 @@ import com.example.boardservice.board.dto.BoardResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/boards")
 public class BoardController {
@@ -27,4 +29,11 @@ public class BoardController {
         BoardResponseDto boardResponseDto = boardService.getBoard(boardId);
         return ResponseEntity.ok(boardResponseDto);
     }
+
+    @GetMapping
+    public ResponseEntity<List<BoardResponseDto>> getAllBoards() {
+        List<BoardResponseDto> boardResponseDtos = boardService.getBoards();
+        return ResponseEntity.ok(boardResponseDtos);
+    }
+
 }
