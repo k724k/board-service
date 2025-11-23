@@ -6,7 +6,10 @@ import com.example.boardservice.board.dto.BoardDto;
 import com.example.boardservice.board.dto.BoardResponseDto;
 import com.example.boardservice.board.dto.UserDto;
 import com.example.boardservice.board.dto.UserResponseDto;
+import com.example.boardservice.board.event.BoardCreatedEvent;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,12 +21,18 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final UserClient userClient;
     private final PointClient pointClient;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public BoardService(BoardRepository boardRepository, UserClient userClient,
-                        PointClient pointClient) {
+    public BoardService(
+            BoardRepository boardRepository,
+            UserClient userClient,
+            PointClient pointClient,
+            KafkaTemplate<String, String> kafkaTemplate
+    ) {
         this.boardRepository = boardRepository;
         this.userClient = userClient;
         this.pointClient = pointClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
 
@@ -51,19 +60,24 @@ public class BoardService {
             savedBoardId = savedBoard.getBoardId();
             isBoardCreated = true; // 게시글 저장 성공 플래그
 
-            // 게시글 작성 시 작성자에게 활동 점수 10점 부여
-            userClient.addActivityScore(createBoardRequestDto.getUserId(), 10);
+            // 게시글 작성 시 작성자에게 활동 점수 10점 부여 (RESTful 동기 방식에서 사용)
+            // userClient.addActivityScore(createBoardRequestDto.getUserId(), 10);
+
+            // '게시글 작성 완료' 이벤트 발행 (Kafka 비동기 방식에서 사용)
+            BoardCreatedEvent boardCreatedEvent
+                    = new BoardCreatedEvent(createBoardRequestDto.getUserId());
+            this.kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
+            System.out.println("게시글 작성 완료 이벤트 발행");
 
         } catch (Exception e) {
             if (isBoardCreated) {
                 // 게시글 작성 보상 트랜잭션 => 게시글 삭제
                 this.boardRepository.deleteById(savedBoardId);
             }
-            if (isPointDeducted){
+            if (isPointDeducted) {
                 // 포인트 차감 보상 트랜잭션 => 포인트 적립
-                pointClient.addPoints(createBoardRequestDto.getUserId(),100);
+                pointClient.addPoints(createBoardRequestDto.getUserId(), 100);
             }
-
             // 실패 응답으로 처리하기 위해 예외 던지기
             throw e;
         }
@@ -128,4 +142,15 @@ public class BoardService {
                 .toList();
     }
 
+    // 객체를 Json 형태의 String으로 만들어주는 메서드
+    // (클래스로 분리하면 더 좋지만 편의를 위해 메서드로만 분리)
+    private String toJsonString(Object object) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String message = objectMapper.writeValueAsString(object);
+            return message;
+        } catch (Exception e) {
+            throw new RuntimeException("Json 직렬화 실패");
+        }
+    }
 }
