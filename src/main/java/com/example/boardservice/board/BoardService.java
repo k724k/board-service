@@ -7,6 +7,8 @@ import com.example.boardservice.board.dto.BoardResponseDto;
 import com.example.boardservice.board.dto.UserDto;
 import com.example.boardservice.board.dto.UserResponseDto;
 import com.example.boardservice.board.event.BoardCreatedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -18,6 +20,7 @@ import java.util.Optional;
 
 @Service
 public class BoardService {
+    private static final Logger log = LoggerFactory.getLogger(BoardService.class);
     private final BoardRepository boardRepository;
     private final UserClient userClient;
     private final PointClient pointClient;
@@ -36,7 +39,7 @@ public class BoardService {
     }
 
 
-    public void create(BoardDto createBoardRequestDto) {
+    public void create(BoardDto createBoardRequestDto, Long userId) {
         // 게시글 저장을 성공 했는지 판단하는 플래그
         boolean isBoardCreated = false;
         Long savedBoardId = null;
@@ -46,14 +49,14 @@ public class BoardService {
 
         try {
             // 게시글 작성 전 100 포인트 차감
-            pointClient.deductPoints(createBoardRequestDto.getUserId(), 100);
+            pointClient.deductPoints(userId, 100);
             isPointDeducted = true; // 포인트 차감 성공 플래그
 
             // 게시글 작성
             Board board = new Board(
                     createBoardRequestDto.getTitle(),
                     createBoardRequestDto.getContent(),
-                    createBoardRequestDto.getUserId()
+                    userId
             );
 
             Board savedBoard = this.boardRepository.save(board);
@@ -61,11 +64,11 @@ public class BoardService {
             isBoardCreated = true; // 게시글 저장 성공 플래그
 
             // 게시글 작성 시 작성자에게 활동 점수 10점 부여 (RESTful 동기 방식에서 사용)
-            // userClient.addActivityScore(createBoardRequestDto.getUserId(), 10);
+            // userClient.addActivityScore(userId, 10);
 
             // '게시글 작성 완료' 이벤트 발행 (Kafka 비동기 방식에서 사용)
             BoardCreatedEvent boardCreatedEvent
-                    = new BoardCreatedEvent(createBoardRequestDto.getUserId());
+                    = new BoardCreatedEvent(userId);
             this.kafkaTemplate.send("board.created", toJsonString(boardCreatedEvent));
             System.out.println("게시글 작성 완료 이벤트 발행");
 
@@ -76,7 +79,7 @@ public class BoardService {
             }
             if (isPointDeducted) {
                 // 포인트 차감 보상 트랜잭션 => 포인트 적립
-                pointClient.addPoints(createBoardRequestDto.getUserId(), 100);
+                pointClient.addPoints(userId, 100);
             }
             // 실패 응답으로 처리하기 위해 예외 던지기
             throw e;
