@@ -1,5 +1,6 @@
 package com.example.boardservice.board;
 
+import com.example.boardservice.board.domain.User;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,6 +14,11 @@ public class Board {
 
     private String content;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", insertable = false, updatable = false) // 조회용
+    private User user;
+
+    @Column(name = "user_id")
     private Long userId; // FK 설정 안하고 그냥 컬럼으로 선언
 
     public Board() {
@@ -38,5 +44,9 @@ public class Board {
 
     public Long getUserId() {
         return userId;
+    }
+
+    public User getUser() {
+        return user;
     }
 }

@@ -83,6 +83,7 @@ public class BoardService {
         }
     }
 
+    // 게시글 조회
     public BoardResponseDto getBoard(Long boardId) {
         // 게시글 불러오기
         Board board = boardRepository.findById(boardId)
@@ -111,6 +112,7 @@ public class BoardService {
         return boardResponseDto;
     }
 
+    // 게시글 목록 조회
     public List<BoardResponseDto> getBoards() {
         List<Board> boards = boardRepository.findAll();
 
@@ -142,6 +144,49 @@ public class BoardService {
                 .toList();
     }
 
+    // 연관관계를 활용한 게시글 조회
+    public BoardResponseDto getBoard2(Long boardId) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        // BoardResponseDto 생성
+        BoardResponseDto boardResponseDto = new BoardResponseDto(
+                board.getBoardId(),
+                board.getTitle(),
+                board.getContent(),
+                new UserDto(
+                        board.getUser().getUserId(),
+                        board.getUser().getName()
+                )
+        );
+
+        return boardResponseDto;
+    }
+
+    // 연관관계를 활용한 게시글 전체 조회
+    public List<BoardResponseDto> getBoards2() {
+        List<Board> boards = boardRepository.findAll();
+
+        return boards.stream()
+                .map(board -> new BoardResponseDto(
+                        board.getBoardId(),
+                        board.getTitle(),
+                        board.getContent(),
+                        new UserDto(
+                                board.getUser().getUserId(),
+                                board.getUser().getName()
+                        )
+                ))
+                .toList();
+    }
+
+
+
+
+
+
+
+
     // 객체를 Json 형태의 String으로 만들어주는 메서드
     // (클래스로 분리하면 더 좋지만 편의를 위해 메서드로만 분리)
     private String toJsonString(Object object) {
@@ -150,7 +195,7 @@ public class BoardService {
             String message = objectMapper.writeValueAsString(object);
             return message;
         } catch (Exception e) {
-            throw new RuntimeException("Json 직렬화 실패");
+            throw new RuntimeException("Json 직렬화 실패",e);
         }
     }
 }

@@ -28,7 +28,7 @@ public class UserClient {
     public Optional<UserResponseDto> fetchUser(Long userId) { // 외부 요청 api (사용자 조회 api 요청)
        try {
            UserResponseDto userResponseDto = this.restClient.get()
-                   .uri("/users/{userId}", userId)
+                   .uri("/internal/users/{userId}", userId)
                    .retrieve()
                    .body(UserResponseDto.class);
            return Optional.ofNullable(userResponseDto);
@@ -42,7 +42,7 @@ public class UserClient {
         try {
             return this.restClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/users")
+                            .path("/internal/users")
                             .queryParam("ids",ids)
                             .build()
                     )
@@ -58,7 +58,7 @@ public class UserClient {
         AddActivityScoreRequestDto addActivityScoreRequestDto
                 = new AddActivityScoreRequestDto(userId, score);
         this.restClient.post()
-                .uri("/users/activity-score/add")
+                .uri("/internal/users/activity-score/add")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(addActivityScoreRequestDto)
                 .retrieve()
