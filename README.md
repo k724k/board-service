@@ -20,6 +20,12 @@ Kafka 이벤트를 발행·소비하며 게시글 CRUD와 사용자 활동 흐�
 
 - 게시글 목록 조회
   - 게시글 목록과 연관된 사용자 정보 함께 노출
+    
+## ✅ Services
+- [api-gateway-service](https://github.com/k724k/api-gateway-service)
+- [user-service](https://github.com/k724k/user-service)
+- [board-service](https://github.com/k724k/board-service)
+- [point-service](https://github.com/k724k/point-serivce)
 
 ## ✅ Tech Stack
 <div align="left">
