@@ -31,3 +31,11 @@ client:
     url: http://localhost:8080
   point-service:
     url: http://localhost:8082
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
